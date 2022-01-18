@@ -1,0 +1,6 @@
+#include "DirectXShaderCompiler/lib/Analysis/IPA/CallGraph.cpp"
+#include "DirectXShaderCompiler/lib/Analysis/IPA/CallGraphSCCPass.cpp"
+#include "DirectXShaderCompiler/lib/Analysis/IPA/CallPrinter.cpp"
+#include "DirectXShaderCompiler/lib/Analysis/IPA/GlobalsModRef.cpp"
+#include "DirectXShaderCompiler/lib/Analysis/IPA/IPA.cpp"
+#include "DirectXShaderCompiler/lib/Analysis/IPA/InlineCost.cpp"

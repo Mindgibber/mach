@@ -1,0 +1,5 @@
+#include "DirectXShaderCompiler/lib/DxilContainer/DxilContainer.cpp"
+#include "DirectXShaderCompiler/lib/DxilContainer/DxilContainerAssembler.cpp"
+#include "DirectXShaderCompiler/lib/DxilContainer/DxilContainerReader.cpp"
+#include "DirectXShaderCompiler/lib/DxilContainer/DxcContainerBuilder.cpp"
+#include "DirectXShaderCompiler/lib/DxilContainer/DxilRuntimeReflection.cpp"

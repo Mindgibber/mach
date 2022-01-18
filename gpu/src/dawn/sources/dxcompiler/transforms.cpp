@@ -1,0 +1,5 @@
+#include "transforms_utils.cpp"
+#include "transforms_inst_combine.cpp"
+#include "transforms_scalar.cpp"
+#include "transforms_ipo.cpp"
+#include "transforms_vectorize.cpp"

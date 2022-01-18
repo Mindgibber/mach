@@ -1,0 +1,7 @@
+#include "DirectXShaderCompiler/lib/Target/Target.cpp"
+#include "DirectXShaderCompiler/lib/Target/TargetIntrinsicInfo.cpp"
+#include "DirectXShaderCompiler/lib/Target/TargetLoweringObjectFile.cpp"
+#include "DirectXShaderCompiler/lib/Target/TargetMachine.cpp"
+#include "DirectXShaderCompiler/lib/Target/TargetMachineC.cpp"
+#include "DirectXShaderCompiler/lib/Target/TargetRecip.cpp"
+#include "DirectXShaderCompiler/lib/Target/TargetSubtargetInfo.cpp"

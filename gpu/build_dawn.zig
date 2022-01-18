@@ -23,7 +23,7 @@ pub const Options = struct {
     vulkan: ?bool = null,
 
     /// Defaults to true on Windows, Linux
-    // TODO(build-system): not respected at all currently
+    // TODO(build-system): not respected on Windows currently
     desktop_gl: ?bool = null,
 
     /// Defaults to true on Android, Linux, Windows, Emscripten
@@ -62,12 +62,71 @@ pub const Options = struct {
     }
 };
 
+pub fn linkyLinky(step: *std.build.LibExeObjStep) void {
+    //dawn_complete_static_libs=true
+
+    step.addLibPath(thisDir() ++ "/libs/dawn/out/Debug/");
+    //step.addLibPath("C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.29.30133/lib/x64/");
+
+    step.addLibPath(thisDir() ++ "/libs/dawn/out/Debug/obj/src/utils/");
+    step.addLibPath(thisDir() ++ "/libs/dawn/out/Debug/obj/src/common/");
+
+    step.linkSystemLibrary("oleaut32");
+    step.linkSystemLibrary("ole32");
+    step.linkSystemLibrary("msvcrtd");
+    step.linkSystemLibrary("msvcrt");
+
+    step.linkSystemLibrary("dawn_native.dll");
+    step.linkSystemLibrary("dawn_platform.dll");
+    step.linkSystemLibrary("dawn_proc.dll");
+    step.linkSystemLibrary("dawn_wire.dll");
+
+    step.linkSystemLibrary("dawn_bindings");
+    step.linkSystemLibrary("dawn_utils");
+    step.linkSystemLibrary("common");
+
+    //step.linkSystemLibrary("VkICD_mock_icd.dll");
+    //step.linkSystemLibrary("VkLayer_khronos_validation.dll");
+    //step.linkSystemLibrary("libEGL.dll");
+    //step.linkSystemLibrary("libGLESv2.dll");
+    step.linkSystemLibrary("libc++.dll");
+    //step.linkSystemLibrary("vk_swiftshader.dll");
+    //step.linkSystemLibrary("vulkan-1.dll");
+    //step.linkSystemLibrary("zlib.dll");
+}
+
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     const opt = options.detectDefaults(target);
 
     const lib_mach_dawn_native = buildLibMachDawnNative(b, step, opt);
     step.linkLibrary(lib_mach_dawn_native);
+    step.linkSystemLibrary("oleaut32");
+    step.linkSystemLibrary("ole32");
+
+    //if (target.os.tag == .windows) {
+    //    linkyLinky(step);
+    //    return;
+    //}
+    //step.addLibPath("C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.29.30133/lib/x64/");
+    //step.linkSystemLibrary("oldnames");
+    //step.addLibPath("C:/Program Files (x86)/Windows Kits/10/Lib/10.0.19041.0/um/x64/");
+    step.linkSystemLibrary("D3d12");
+    step.linkSystemLibrary("D3D12");
+    //step.linkSystemLibrary("vcruntime140d");
+
+    //step.addLibPath("C:/Program Files (x86)/Microsoft SDKs/Windows Kits/10/ExtensionSDKs/Microsoft.UniversalCRT.Debug/10.0.19041.0/Redist/Debug/x64/");
+    //step.linkSystemLibrary("ucrtbased");
+ 
+    //step.addLibPath("C:/Program Files/mingw-w64/x86_64-8.1.0-posix-seh-rt_v6-rev0/mingw64/x86_64-w64-mingw32/lib/");
+    //step.linkSystemLibrary("dxguid");
+    step.linkSystemLibrary("dxguid");
+    step.linkSystemLibrary("dbghelp");
+    step.addLibPath("C:\\Program Files\\mingw-w64\\x86_64-8.1.0-posix-seh-rt_v6-rev0\\mingw64\\x86_64-w64-mingw32\\lib");
+    step.linkLibCpp();
+
+        // step.linkSystemLibrary("dxcompiler");
+        // step.addLibPath("C:\\tmp2\\lib");
 
     const lib_dawn_common = buildLibDawnCommon(b, step, opt);
     step.linkLibrary(lib_dawn_common);
@@ -78,7 +137,10 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
     // dawn-native
     const lib_abseil_cpp = buildLibAbseilCpp(b, step, opt);
     step.linkLibrary(lib_abseil_cpp);
+    const lib_dxcompiler = buildLibDxcompiler(b, step, opt);
+    step.linkLibrary(lib_dxcompiler);
     const lib_dawn_native = buildLibDawnNative(b, step, opt);
+    lib_dawn_native.linkLibrary(lib_dxcompiler);
     step.linkLibrary(lib_dawn_native);
 
     const lib_dawn_wire = buildLibDawnWire(b, step, opt);
@@ -105,6 +167,7 @@ fn buildLibMachDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: 
     lib.install();
     lib.setBuildMode(step.build_mode);
     lib.setTarget(step.target);
+    //linkyLinky(lib);
     lib.linkLibCpp();
 
     // TODO(build-system): pass system SDK options through
@@ -119,6 +182,9 @@ fn buildLibMachDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: 
         include("libs/dawn/out/Debug/gen/src"),
         include("libs/dawn/src/include"),
         include("libs/dawn/src"),
+        "-D_DEBUG",
+        "-D_MT",
+        "-D_DLL",
     }) catch unreachable;
 
     lib.addCSourceFile("src/dawn/dawn_native_mach.cpp", flags.items);
@@ -159,6 +225,11 @@ fn buildLibDawnCommon(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         system_sdk.include(b, lib, .{});
         lib.linkFramework("Foundation");
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn/src/common/SystemUtils_mac.mm" }) catch unreachable;
+        sources.append(abs_path) catch unreachable;
+    }
+
+    if (target.os.tag == .windows) {
+        var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn/src/common/WindowsUtils.cpp" }) catch unreachable;
         sources.append(abs_path) catch unreachable;
     }
     lib.addCSourceFiles(sources.items, flags.items);
@@ -271,51 +342,38 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     if (options.d3d12.?) {
         // TODO(build-system): windows
         //     libs += [ "dxguid.lib" ]
-        // TODO(build-system): reduce build units
-        for ([_][]const u8{
-            "src/dawn_native/d3d12/AdapterD3D12.cpp",
-            "src/dawn_native/d3d12/BackendD3D12.cpp",
-            "src/dawn_native/d3d12/BindGroupD3D12.cpp",
-            "src/dawn_native/d3d12/BindGroupLayoutD3D12.cpp",
-            "src/dawn_native/d3d12/BufferD3D12.cpp",
-            "src/dawn_native/d3d12/CPUDescriptorHeapAllocationD3D12.cpp",
-            "src/dawn_native/d3d12/CommandAllocatorManager.cpp",
-            "src/dawn_native/d3d12/CommandBufferD3D12.cpp",
-            "src/dawn_native/d3d12/CommandRecordingContext.cpp",
-            "src/dawn_native/d3d12/ComputePipelineD3D12.cpp",
-            "src/dawn_native/d3d12/D3D11on12Util.cpp",
-            "src/dawn_native/d3d12/D3D12Error.cpp",
-            "src/dawn_native/d3d12/D3D12Info.cpp",
-            "src/dawn_native/d3d12/DeviceD3D12.cpp",
-            "src/dawn_native/d3d12/GPUDescriptorHeapAllocationD3D12.cpp",
-            "src/dawn_native/d3d12/HeapAllocatorD3D12.cpp",
-            "src/dawn_native/d3d12/HeapD3D12.cpp",
-            "src/dawn_native/d3d12/NativeSwapChainImplD3D12.cpp",
-            "src/dawn_native/d3d12/PageableD3D12.cpp",
-            "src/dawn_native/d3d12/PipelineLayoutD3D12.cpp",
-            "src/dawn_native/d3d12/PlatformFunctions.cpp",
-            "src/dawn_native/d3d12/QuerySetD3D12.cpp",
-            "src/dawn_native/d3d12/QueueD3D12.cpp",
-            "src/dawn_native/d3d12/RenderPassBuilderD3D12.cpp",
-            "src/dawn_native/d3d12/RenderPipelineD3D12.cpp",
-            "src/dawn_native/d3d12/ResidencyManagerD3D12.cpp",
-            "src/dawn_native/d3d12/ResourceAllocatorManagerD3D12.cpp",
-            "src/dawn_native/d3d12/ResourceHeapAllocationD3D12.cpp",
-            "src/dawn_native/d3d12/SamplerD3D12.cpp",
-            "src/dawn_native/d3d12/SamplerHeapCacheD3D12.cpp",
-            "src/dawn_native/d3d12/ShaderModuleD3D12.cpp",
-            "src/dawn_native/d3d12/ShaderVisibleDescriptorAllocatorD3D12.cpp",
-            "src/dawn_native/d3d12/StagingBufferD3D12.cpp",
-            "src/dawn_native/d3d12/StagingDescriptorAllocatorD3D12.cpp",
-            "src/dawn_native/d3d12/SwapChainD3D12.cpp",
-            "src/dawn_native/d3d12/TextureCopySplitter.cpp",
-            "src/dawn_native/d3d12/TextureD3D12.cpp",
-            "src/dawn_native/d3d12/UtilsD3D12.cpp",
-        }) |path| {
-            var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-            lib.addCSourceFile(abs_path, flags.items);
-            sources.append(abs_path) catch unreachable;
-        }
+        lib.linkSystemLibrary("dxguid");
+        lib.addLibPath("C:\\Program Files\\mingw-w64\\x86_64-8.1.0-posix-seh-rt_v6-rev0\\mingw64\\x86_64-w64-mingw32\\lib");
+
+        //lib.linkSystemLibrary("dxcompiler");
+        //lib.addLibPath("C:\\tmp2\\lib");
+        flags.appendSlice(&.{
+            "-IC:\\tmp2",
+            //"-IC:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.19041.0\\um",
+            //"-IC:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.19041.0\\shared",
+            //"-IC:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.19041.0\\winrt",
+            "-D__EMULATE_UUID=1",
+            "-Wno-nonportable-include-path",
+            "-Wno-extern-c-compat",
+            "-Wno-invalid-noreturn",
+            "-Wno-pragma-pack",
+            "-Wno-microsoft-template-shadow",
+            "-Wno-unused-command-line-argument",
+            "-Wno-microsoft-exception-spec",
+            "-Wno-implicit-exception-spec-mismatch",
+            "-Wno-unknown-attributes",
+            "-Wno-c++20-extensions",
+            "-D_CRT_SECURE_NO_WARNINGS",
+
+            "-DWIN32_LEAN_AND_MEAN",
+            "-DD3D10_ARBITRARY_HEADER_ORDERING",
+            "-D_Maybenull_=",
+            "-D__in=",
+            "-D__out=",
+            "-DNOMINMAX",
+        }) catch unreachable;
+
+        sources.append(thisDir() ++ "/src/dawn/sources/dawn_native_d3d12.cpp") catch unreachable;
     }
     if (options.metal.?) {
         lib.linkFramework("Metal");
@@ -765,6 +823,7 @@ fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
     lib.setTarget(step.target);
     lib.linkLibCpp();
     system_sdk.include(b, lib, .{});
+    lib.linkSystemLibrary("bcrypt");
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     if (target.os.tag == .macos) lib.linkFramework("CoreFoundation");
@@ -775,7 +834,16 @@ fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
         include("libs/dawn"),
         include("libs/dawn/third_party/abseil-cpp"),
     }) catch unreachable;
-    if (target.os.tag == .windows) flags.append("-DABSL_FORCE_THREAD_IDENTITY_MODE=2") catch unreachable;
+    if (target.os.tag == .windows) flags.appendSlice(&.{
+        "-DABSL_FORCE_THREAD_IDENTITY_MODE=2",
+        "-DWIN32_LEAN_AND_MEAN",
+        "-DD3D10_ARBITRARY_HEADER_ORDERING",
+        "-D_Maybenull_=",
+        "-D__in=",
+        "-D__out=",
+        "-D_CRT_SECURE_NO_WARNINGS",
+        "-DNOMINMAX",
+    }) catch unreachable;
 
     // absl
     lib.addCSourceFiles(&.{
@@ -842,6 +910,33 @@ fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
     }
 
     if (options.d3d12.?) {
+        // TODO(build-system): keep these in sync with other windows d3d12 flags
+        flags.appendSlice(&.{
+            "-IC:\\tmp2",
+            //"-IC:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.19041.0\\um",
+            //"-IC:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.19041.0\\shared",
+            //"-IC:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.19041.0\\winrt",
+            "-D__EMULATE_UUID=1",
+            "-Wno-nonportable-include-path",
+            "-Wno-extern-c-compat",
+            "-Wno-invalid-noreturn",
+            "-Wno-pragma-pack",
+            "-Wno-microsoft-template-shadow",
+            "-Wno-unused-command-line-argument",
+            "-Wno-microsoft-exception-spec",
+            "-Wno-implicit-exception-spec-mismatch",
+            "-Wno-unknown-attributes",
+            "-Wno-c++20-extensions",
+            "-D_CRT_SECURE_NO_WARNINGS",
+
+            "-DWIN32_LEAN_AND_MEAN",
+            "-DD3D10_ARBITRARY_HEADER_ORDERING",
+            "-D_Maybenull_=",
+            "-D__in=",
+            "-D__out=",
+            "-DNOMINMAX",
+        }) catch unreachable;
+
         for ([_][]const u8{
             "src/utils/D3D12Binding.cpp",
         }) |path| {
@@ -879,10 +974,165 @@ fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
     return lib;
 }
 
+// Buids dxcompiler sources; derived from libs/DirectXShaderCompiler/CMakeLists.txt
+fn buildLibDxcompiler(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
+    var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
+    const lib = b.addStaticLibrary("dxcompiler", main_abs);
+    lib.install();
+    lib.setBuildMode(step.build_mode);
+    lib.setTarget(step.target);
+    lib.linkLibCpp();
+
+    var flags = std.ArrayList([]const u8).init(b.allocator);
+    options.appendFlags(&flags, false) catch unreachable;
+    flags.appendSlice(&.{
+        include("libs/"), 
+        include("libs/DirectXShaderCompiler/include/llvm/llvm_assert"),
+        include("libs/DirectXShaderCompiler/include"),
+        include("libs/DirectXShaderCompiler/build/include"),
+        include("libs/DirectXShaderCompiler/build/lib/HLSL"),
+        include("libs/DirectXShaderCompiler/build/lib/DxilPIXPasses"),
+        include("libs/DirectXShaderCompiler/build/include"),
+        "-IC:\\tmp2",
+        "-D_In_=",
+        "-D_Out_=",
+        "-D_Out_opt_=",
+        "-D_Ret_notnull_=",
+        "-D_Inout_=",
+        "-D_Maybenull_=",
+        "-D_Outptr_opt_=",
+        "-D_In_range_(lb, ub)=",
+        "-D_Out_writes_z_(size)=",
+        "-D_Use_decl_annotations_=",
+        "-D_Out_writes_(size)=",
+        "-D_In_opt_count_(size)=",
+        "-D_Outptr_result_maybenull_=",
+        "-D_Analysis_assume_(expr)=",
+        "-D_Field_size_full_(size)=",
+        "-D_In_reads_bytes_(size)=",
+        "-D_Field_size_opt_(size)=",
+        "-D_In_NLS_string_(size)=",
+        "-D_Outptr_=",
+        "-DUNREFERENCED_PARAMETER(x)=",
+        //"-DGET_INTRINSIC_ENUM_VALUES",
+        "-Wno-inconsistent-missing-override",
+        "-Wno-missing-exception-spec",
+        "-Wno-switch",
+        "-Wno-macro-redefined", // regex2.h and regcomp.c requires this for OUT redefinition
+        "-DMSFT_SUPPORTS_CHILD_PROCESSES=1",
+        "-DHAVE_LIBPSAPI=1",
+        "-DHAVE_LIBSHELL32=1",
+    }) catch unreachable;
+
+    const source_dirs = &[_][]const u8{
+        "lib/Analysis/IPA",
+        "lib/Analysis",
+        "lib/AsmParser",
+        "lib/Bitcode/Writer",
+        "lib/DxcBindingTable",
+        "lib/DxcSupport",
+        "lib/DxilContainer",
+        "lib/DxilPIXPasses",
+        "lib/DxilRootSignature",
+        "lib/DXIL",
+        "lib/DxrFallback",
+        "lib/HLSL",
+        "lib/IRReader",
+        "lib/IR",
+        "lib/Linker",
+        "lib/miniz",
+        "lib/Option",
+        "lib/PassPrinters",
+        "lib/Passes",
+        "lib/ProfileData",
+        "lib/Target",
+        "lib/Transforms/InstCombine",
+        "lib/Transforms/IPO",
+        "lib/Transforms/Scalar",
+        "lib/Transforms/Utils",
+        "lib/Transforms/Vectorize",
+    };
+    var sources = std.ArrayList([]const u8).init(b.allocator);
+    scanSources(b, &sources, "libs/DirectXShaderCompiler/lib/Support", &.{".cpp", ".c"}, &.{
+        "DynamicLibrary.cpp", // ignore, HLSL_IGNORE_SOURCES
+        "PluginLoader.cpp", // ignore, HLSL_IGNORE_SOURCES
+        "Path.cpp", // ignore, LLVM_INCLUDE_TESTS
+        "DynamicLibrary.cpp", // ignore
+    }) catch unreachable;
+    inline for (source_dirs) |dir| {
+        scanSources(b, &sources, "libs/DirectXShaderCompiler/" ++ dir, &.{".cpp", ".c"}, &.{}) catch unreachable;
+    }
+    scanSources(b, &sources, "libs/DirectXShaderCompiler/lib/Bitcode/Reader", &.{".cpp", ".c"}, &.{
+        "BitReader.cpp" // ignore
+    }) catch unreachable;
+    addCSourceFiles(b, lib, sources.items, flags.items);
+
+    // scanSources(b, &sources, "src/dawn/sources/dxcompiler", &.{".cpp"}, &.{
+    //     "sources.cpp",
+    //     "bitcode.cpp",
+    //     "transforms.cpp",
+    // }) catch unreachable;
+    //std.debug.print("{s}\n", .{sources.items});
+    return lib;
+}
+
 fn include(comptime rel: []const u8) []const u8 {
     return "-I" ++ thisDir() ++ "/" ++ rel;
 }
 
 fn thisDir() []const u8 {
     return std.fs.path.dirname(@src().file) orelse ".";
+}
+
+// TODO(build-system): This and divideSources are needed to avoid Windows process creation argument
+// length limits. This should probably be fixed in Zig itself, not worked around here.
+fn addCSourceFiles(b: *Builder, step: *std.build.LibExeObjStep, sources: []const []const u8, flags: []const []const u8) void {
+    for (divideSources(b, sources) catch unreachable) |divided| step.addCSourceFiles(divided, flags);
+}
+
+fn divideSources(b: *Builder, sources: []const []const u8) ![]const []const []const u8 {
+    var divided = std.ArrayList([]const []const u8).init(b.allocator);
+    var current = std.ArrayList([]const u8).init(b.allocator);
+    var current_size: usize = 0;
+    for (sources) |src| {
+        if (current_size + src.len >= 30000) {
+            try divided.append(current.items);
+            current = std.ArrayList([]const u8).init(b.allocator);
+            current_size = 0;
+        }
+        current_size += src.len;
+        try current.append(src);
+    }
+    return divided.items;
+}
+
+fn scanSources(b: *Builder, dst: *std.ArrayList([]const u8), comptime rel_dir: []const u8, extensions: []const []const u8, excluding: []const []const u8) !void {
+    const abs_dir = thisDir() ++ "/" ++ rel_dir;
+    var dir = try std.fs.openDirAbsolute(abs_dir, .{.iterate = true});
+    defer dir.close();
+    var dir_it = dir.iterate();
+    while (try dir_it.next()) |entry| {
+        if (entry.kind != .File) continue;
+        var abs_path = try std.fs.path.join(b.allocator, &.{abs_dir, entry.name});
+        abs_path = try std.fs.realpathAlloc(b.allocator, abs_path);
+
+        const allowed_extension = blk: {
+            const ours = std.fs.path.extension(entry.name);
+            for (extensions) |ext| {
+                if (std.mem.eql(u8, ours, ext)) break :blk true;
+            }
+            break :blk false;
+        };
+        if (!allowed_extension) continue;
+
+        const excluded = blk: {
+            for (excluding) |excluded| {
+                if (std.mem.eql(u8, entry.name, excluded)) break :blk true;
+            }
+            break :blk false;
+        };
+        if (excluded) continue;
+
+        try dst.append(abs_path);
+    }
 }

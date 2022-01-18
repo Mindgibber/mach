@@ -1,0 +1,13 @@
+#include "DirectXShaderCompiler/lib/Transforms/InstCombine/InstructionCombining.cpp
+#include "DirectXShaderCompiler/lib/Transforms/InstCombine/InstCombineAddSub.cpp
+#include "DirectXShaderCompiler/lib/Transforms/InstCombine/InstCombineAndOrXor.cpp
+#include "DirectXShaderCompiler/lib/Transforms/InstCombine/InstCombineCalls.cpp
+#include "DirectXShaderCompiler/lib/Transforms/InstCombine/InstCombineCasts.cpp
+#include "DirectXShaderCompiler/lib/Transforms/InstCombine/InstCombineCompares.cpp
+#include "DirectXShaderCompiler/lib/Transforms/InstCombine/InstCombineLoadStoreAlloca.cpp
+#include "DirectXShaderCompiler/lib/Transforms/InstCombine/InstCombineMulDivRem.cpp
+#include "DirectXShaderCompiler/lib/Transforms/InstCombine/InstCombinePHI.cpp
+#include "DirectXShaderCompiler/lib/Transforms/InstCombine/InstCombineSelect.cpp
+#include "DirectXShaderCompiler/lib/Transforms/InstCombine/InstCombineShifts.cpp
+#include "DirectXShaderCompiler/lib/Transforms/InstCombine/InstCombineSimplifyDemanded.cpp
+#include "DirectXShaderCompiler/lib/Transforms/InstCombine/InstCombineVectorOps.cpp
