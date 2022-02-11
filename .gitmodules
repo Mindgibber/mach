@@ -1,6 +1,7 @@
 [submodule "gpu/libs/dawn"]
 	path = gpu/libs/dawn
 	url = https://github.com/hexops/dawn
+	branch = mach
 [submodule "gpu/libs/DirectXShaderCompiler"]
 	path = gpu/libs/DirectXShaderCompiler
 	url = https://github.com/hexops/DirectXShaderCompiler
