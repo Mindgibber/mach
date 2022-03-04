@@ -143,7 +143,6 @@ fn linkFromSource(b: *Builder, step: *std.build.LibExeObjStep, options: Options)
             step.linkSystemLibrary("ole32");
             step.linkSystemLibrary("dxguid");
             step.linkSystemLibrary("dbghelp");
-            step.addLibPath("C:\\Program Files\\mingw-w64\\x86_64-8.1.0-posix-seh-rt_v6-rev0\\mingw64\\x86_64-w64-mingw32\\lib");
             step.linkLibCpp();
         }
 
@@ -151,7 +150,7 @@ fn linkFromSource(b: *Builder, step: *std.build.LibExeObjStep, options: Options)
             step.linkSystemLibrary("D3d12");
             step.linkSystemLibrary("D3D12");
 
-            // TODO: this doesn't export 
+            // TODO: this doesn't export
             // lld-link: error: undefined symbol: _GUID const& __mingw_uuidof<IDXGraphicsAnalysis>()
             // >>> referenced by C:\users\slimsag\desktop\mach2\gpu-dawn\libs\dawn\src\dawn\native\d3d12\backen~1.cpp:92
             // >>>               dawn-native.lib(backen~1.obj):(dawn::native::d3d12::Backend::Initialize())
@@ -202,19 +201,17 @@ fn linkFromSource(b: *Builder, step: *std.build.LibExeObjStep, options: Options)
         step.linkSystemLibrary("oleaut32");
         step.linkSystemLibrary("ole32");
         step.linkSystemLibrary("dbghelp");
-        step.addLibPath("C:\\Program Files\\mingw-w64\\x86_64-8.1.0-posix-seh-rt_v6-rev0\\mingw64\\x86_64-w64-mingw32\\lib");
         step.linkLibCpp();
     }
 
     if (options.d3d12.?) {
-        lib_dawn.addLibPath("C:\\Program Files\\mingw-w64\\x86_64-8.1.0-posix-seh-rt_v6-rev0\\mingw64\\x86_64-w64-mingw32\\lib");
         lib_dawn.linkSystemLibrary("dxguid");
         step.linkSystemLibrary("dxguid");
         // lib_dawn.linkSystemLibrary("dxgi");
         // step.linkSystemLibrary("D3d12");
         // step.linkSystemLibrary("D3D12");
 
-        // TODO: this doesn't export 
+        // TODO: this doesn't export
         // lld-link: error: undefined symbol: _GUID const& __mingw_uuidof<IDXGraphicsAnalysis>()
         // >>> referenced by C:\users\slimsag\desktop\mach2\gpu-dawn\libs\dawn\src\dawn\native\d3d12\backen~1.cpp:92
         // >>>               dawn-native.lib(backen~1.obj):(dawn::native::d3d12::Backend::Initialize())
@@ -644,8 +641,6 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
 
     if (options.d3d12.?) {
         flags.appendSlice(&.{
-            "-IC:\\Users\\slimsag\\Desktop\\mach2\\sdk-windows-x86_64\\include",
-            // "-IC:\\tmp2",
             "-DDAWN_NO_WINDOWS_UI",
             "-D__EMULATE_UUID=1",
             "-Wno-nonportable-include-path",
@@ -662,11 +657,6 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
 
             "-DWIN32_LEAN_AND_MEAN",
             "-DD3D10_ARBITRARY_HEADER_ORDERING",
-            "-D_Maybenull_=",
-            "-D_Pre_maybenull_=",
-            "-D_Post_invalid_=",
-            "-D__in=",
-            "-D__out=",
             "-DNOMINMAX",
         }) catch unreachable;
     }
@@ -704,10 +694,6 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     if (options.d3d12.?) {
         lib.linkSystemLibrary("dxgi");
         lib.linkSystemLibrary("dxguid");
-        lib.addLibPath("C:\\Program Files\\mingw-w64\\x86_64-8.1.0-posix-seh-rt_v6-rev0\\mingw64\\x86_64-w64-mingw32\\lib");
-
-        //lib.linkSystemLibrary("dxcompiler");
-        //lib.addLibPath("C:\\tmp2\\lib");
 
         for ([_][]const u8{
             "src/dawn/mingw_helpers.cpp",
@@ -1152,11 +1138,6 @@ fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
         "-DABSL_FORCE_THREAD_IDENTITY_MODE=2",
         "-DWIN32_LEAN_AND_MEAN",
         "-DD3D10_ARBITRARY_HEADER_ORDERING",
-        "-D_Maybenull_=",
-        "-D_Pre_maybenull_=",
-        "-D_Post_invalid_=",
-        "-D__in=",
-        "-D__out=",
         "-D_CRT_SECURE_NO_WARNINGS",
         "-DNOMINMAX",
     }) catch unreachable;
@@ -1268,8 +1249,6 @@ fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
 
         // TODO(build-system): keep these in sync with other windows d3d12 flags
         flags.appendSlice(&.{
-            "-IC:\\Users\\slimsag\\Desktop\\mach2\\sdk-windows-x86_64\\include",
-            // "-IC:\\tmp2",
             "-DDAWN_NO_WINDOWS_UI",
             //"-IC:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.19041.0\\um",
             //"-IC:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.19041.0\\shared",
@@ -1289,11 +1268,6 @@ fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
 
             "-DWIN32_LEAN_AND_MEAN",
             "-DD3D10_ARBITRARY_HEADER_ORDERING",
-            "-D_Maybenull_=",
-            "-D_Pre_maybenull_=",
-            "-D_Post_invalid_=",
-            "-D__in=",
-            "-D__out=",
             "-DNOMINMAX",
         }) catch unreachable;
     }
@@ -1342,48 +1316,28 @@ fn buildLibDxcompiler(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         separate_lib.linkLibCpp();
         break :blk separate_lib;
     };
+    system_sdk.include(b, lib, .{});
 
     var flags = std.ArrayList([]const u8).init(b.allocator);
     flags.appendSlice(&.{
-        include("libs/"), 
+        include("libs/"),
         include("libs/DirectXShaderCompiler/include/llvm/llvm_assert"),
         include("libs/DirectXShaderCompiler/include"),
         include("libs/DirectXShaderCompiler/build/include"),
         include("libs/DirectXShaderCompiler/build/lib/HLSL"),
         include("libs/DirectXShaderCompiler/build/lib/DxilPIXPasses"),
         include("libs/DirectXShaderCompiler/build/include"),
-        "-IC:\\Users\\slimsag\\Desktop\\mach2\\sdk-windows-x86_64\\include",
-        // "-IC:\\tmp2",
-        "-D_In_=",
-        "-D_Out_=",
-        "-D_Out_opt_=",
-        "-D_Ret_notnull_=",
-        "-D_Inout_=",
-        "-D_Maybenull_=",
-        "-D_Pre_maybenull_=",
-        "-D_Post_invalid_=",
-        "-D_Outptr_opt_=",
-        "-D_In_range_(lb, ub)=",
-        "-D_Out_writes_z_(size)=",
-        "-D_Use_decl_annotations_=",
-        "-D_Out_writes_(size)=",
-        "-D_In_opt_count_(size)=",
-        "-D_Outptr_result_maybenull_=",
-        "-D_Analysis_assume_(expr)=",
-        "-D_Field_size_full_(size)=",
-        "-D_In_reads_bytes_(size)=",
-        "-D_Field_size_opt_(size)=",
-        "-D_In_NLS_string_(size)=",
-        "-D_Outptr_=",
         "-DUNREFERENCED_PARAMETER(x)=",
         //"-DGET_INTRINSIC_ENUM_VALUES",
         "-Wno-inconsistent-missing-override",
         "-Wno-missing-exception-spec",
         "-Wno-switch",
+        "-Wno-deprecated-declarations",
         "-Wno-macro-redefined", // regex2.h and regcomp.c requires this for OUT redefinition
         "-DMSFT_SUPPORTS_CHILD_PROCESSES=1",
         "-DHAVE_LIBPSAPI=1",
         "-DHAVE_LIBSHELL32=1",
+        "-DLLVM_ON_WIN32=1",
     }) catch unreachable;
 
     appendLangScannedSources(b, lib, options, .{
@@ -1440,7 +1394,7 @@ fn buildLibDxcompiler(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         },
         .flags = flags.items,
         .excluding_contains = &.{
-            "BitReader.cpp" // ignore
+            "BitReader.cpp", // ignore
         },
     }) catch unreachable;
     return lib;
